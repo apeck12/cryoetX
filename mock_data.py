@@ -354,3 +354,55 @@ def simulate_damage(specs_path, pdb_path, resolution, tilt_order, bfactor):
     
     return hklI, hklp, hklt, A
 
+
+# --------------------------------------------- #
+#    Metrics comparing angular distributions    #
+# --------------------------------------------- #
+
+def kl_divergence(p, q=np.arange(-60,61,1)):
+    """
+    Compute KL divergence, assuming that the expected distribution is 
+    uniform across sampling frequencies given by q.
+    
+    Inputs:
+    -------
+    p: distribution of tilt angles
+    q: sampling bins in angular space
+    """   
+    counts, bins = np.histogram(p, bins=q, normed=True)
+    q = 1.0 / len(counts) * np.ones(len(counts))
+    kl = np.sum(counts[counts!=0] * np.log(counts[counts!=0] / q[counts!=0]))
+    return kl
+
+
+def kl_divergence_alt(p, q=np.arange(-60,61,1)):
+    """
+    Compute alternate KL divergence, assuming that the expected distribution 
+    is uniform across sampling frequencies given by q. In this case, the abs
+    value of the log is taken.
+    
+    Inputs:
+    -------
+    p: distribution of tilt angles
+    q: sampling bins in angular space
+    """   
+    counts, bins = np.histogram(p, bins=q, normed=True)
+    q = 1.0 / len(counts) * np.ones(len(counts))
+    kl = np.sum(counts[counts!=0] * np.abs(np.log(counts[counts!=0] / q[counts!=0])))
+    return kl
+
+
+def chi_squared(p, q=np.arange(-60,61,1)):
+    """
+    Compute chi-squared value, assuming the expected distribution is 
+    uniform across sampling frequencies given by q.
+    
+    Inputs:
+    -------
+    p: distribution of tilt angles
+    q: sampling bins in angular space
+    """   
+    obs, bins = np.histogram(p, q, normed=True)
+    exp = 1.0 / len(obs) * np.ones(len(obs))
+    chi_sq = np.sum(np.square(obs-exp) / np.sqrt(exp))
+    return chi_sq
