@@ -55,7 +55,60 @@ def data_paths(args):
     assert all([i==n_files[0] for i in n_files])
     
     return data_paths
+
+
+def order_datasets(args):
+    """
+    Reorder the datasets based on maximizing the number of shared reflections
+    being merged at each iteration.
     
+    Inputs:
+    -------
+    args: dict that includes a 'data_paths' key to intensity file names
+    
+    Outputs:
+    --------
+    args: updated dict, with 'data_paths' key reordered
+    """
+    order = np.zeros(len(args['data_paths']['intensities'])).astype(int)
+
+    # retrieve lists of reflections available in each dataset
+    hkl = dict()
+    for i,fname in enumerate(args['data_paths']['intensities']):
+        hkl[i] = pickle.load(open(fname)).keys()
+
+    # determine which pair of tomgorams will be added first
+    combinations = list(itertools.combinations(hkl.keys(), 2))
+    n_shared = np.zeros(len(combinations))
+
+    hkl_list = list()
+    for i,c in enumerate(combinations):
+        n_shared[i] = len(set(hkl[c[0]]).intersection(set(hkl[c[1]])))
+
+    c_interest = combinations[np.where(n_shared == n_shared.max())[0][0]]
+    for i,c in enumerate(c_interest):
+        hkl_list.extend(hkl[c])
+        order[i] = c
+        hkl.pop(c)
+        
+    # determine order of the remaining tomograms
+    num = 2
+    while num < len(order):
+        n_shared = dict()
+        for i in hkl.keys():
+            n_shared[i] = len(set(hkl[i]).intersection(set(hkl_list)))
+        c = max(n_shared, key=n_shared.get)
+        hkl_list.extend(hkl[c])
+        order[num] = c
+        hkl.pop(c)
+        num += 1
+
+    # reorder json, intensities, and phase filenames in data_paths
+    for ftype in args['data_paths'].keys():
+        args['data_paths'][ftype] = [args['data_paths'][ftype][num] for num in order]
+        
+    return args
+
 
 def assess_tr_data(args):
     """
