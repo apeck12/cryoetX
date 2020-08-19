@@ -11,6 +11,11 @@ import utils, cctbx_utils, iotbx.pdb
 from cctbx import miller
 from cctbx.array_family import flex
 
+"""
+Processing steps after peak-fitting, including merging, finding the crystallographic origin, 
+and reduction to the asymmetric units for a specified set of simulated tomograms.
+"""
+
 def parse_commandline():
     """
     Parse command line input and set default values for inputs not given.
@@ -229,6 +234,7 @@ if __name__ == '__main__':
     # retrieve parameters from command line input
     args = parse_commandline()
     args['data_paths'] = data_paths(args)
+    args['data_paths'] = order_datasets(args)
     args['n_cryst'] = len(args['data_paths']['json'])
     if not os.path.isdir(args['output']):
         os.mkdir(args['output'])
